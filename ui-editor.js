@@ -753,6 +753,11 @@ dom.saveLayout.addEventListener("click", saveLayoutToPreview);
 dom.freezeUi.addEventListener("click", freezeUiLayout);
 dom.unfreezeUi.addEventListener("click", unfreezeUiLayout);
 
+window.addEventListener("message", async (event) => {
+  if (event.data?.type !== "freeze-current-ui") return;
+  await freezeUiLayout();
+});
+
 window.addEventListener("pointermove", handlePointerMove);
 window.addEventListener("pointerup", stopPointer);
 
