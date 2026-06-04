@@ -7,7 +7,7 @@ const STORAGE_KEYS = {
 
 const DESIGN_SIZE = {
   width: 720,
-  height: 1280,
+  height: 1440,
 };
 
 const screens = [
@@ -174,7 +174,7 @@ function buildConfig() {
     schemaVersion: "0.1",
     engineTarget: "cocos-creator-3.8.8",
     canvas: {
-      aspect: "9:16",
+      aspect: "720:1440",
       designWidth: DESIGN_SIZE.width,
       designHeight: DESIGN_SIZE.height,
     },

@@ -237,7 +237,7 @@ button.danger:hover {
 
 .phone {
   width: min(430px, 100%);
-  aspect-ratio: 9 / 16;
+  aspect-ratio: 1 / 2;
   overflow: hidden;
   border: 10px solid #1f2a30;
   border-radius: 22px;
