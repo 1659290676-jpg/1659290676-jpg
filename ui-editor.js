@@ -522,14 +522,32 @@ function collectUiAssets() {
   return assets;
 }
 
+function clearHeavyUiStorage() {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.uiAssets);
+    localStorage.removeItem(STORAGE_KEYS.frozenUiAssets);
+    sessionStorage.removeItem(STORAGE_KEYS.uiAssets);
+    sessionStorage.removeItem(STORAGE_KEYS.frozenUiAssets);
+  } catch (error) {
+    console.warn("Failed to clear heavy UI asset storage.", error);
+  }
+}
+
+function writeSmallUiStorage(uiConfig, frozen = false) {
+  localStorage.setItem(STORAGE_KEYS.uiConfig, JSON.stringify(uiConfig));
+  if (frozen) {
+    localStorage.setItem(STORAGE_KEYS.frozenUiConfig, JSON.stringify(uiConfig));
+  }
+}
+
 function saveLayoutToPreview() {
   try {
     window.spotGameShared.uiConfig = buildConfig();
     window.spotGameShared.uiAssets = collectUiAssets();
     sendToHub({ type: "save-ui-preview", uiConfig: window.spotGameShared.uiConfig, uiAssets: window.spotGameShared.uiAssets });
     try {
-      localStorage.setItem(STORAGE_KEYS.uiConfig, JSON.stringify(window.spotGameShared.uiConfig));
-      localStorage.setItem(STORAGE_KEYS.uiAssets, JSON.stringify(window.spotGameShared.uiAssets));
+      clearHeavyUiStorage();
+      writeSmallUiStorage(window.spotGameShared.uiConfig);
     } catch (storageError) {
       console.warn("UI layout was saved in memory only.", storageError);
     }
@@ -548,6 +566,8 @@ async function freezeUiLayout() {
   let savedToIndexedDb = false;
   let savedToFallback = false;
 
+  clearHeavyUiStorage();
+
   try {
     await window.SpotPersistentStore.saveUi("default-ui", uiConfig, uiAssets);
     savedToIndexedDb = true;
@@ -556,25 +576,21 @@ async function freezeUiLayout() {
   }
 
   try {
-    localStorage.setItem(STORAGE_KEYS.uiConfig, JSON.stringify(uiConfig));
-    localStorage.setItem(STORAGE_KEYS.uiAssets, JSON.stringify(uiAssets));
-    localStorage.setItem(STORAGE_KEYS.frozenUiConfig, JSON.stringify(uiConfig));
-    localStorage.setItem(STORAGE_KEYS.frozenUiAssets, JSON.stringify(uiAssets));
+    writeSmallUiStorage(uiConfig, true);
     savedToFallback = true;
   } catch (localError) {
     console.warn("localStorage freeze failed, trying sessionStorage.", localError);
     try {
       sessionStorage.setItem(STORAGE_KEYS.frozenUiConfig, JSON.stringify(uiConfig));
-      sessionStorage.setItem(STORAGE_KEYS.frozenUiAssets, JSON.stringify(uiAssets));
       savedToFallback = true;
     } catch (sessionError) {
       console.error(sessionError);
     }
   }
 
-  if (!savedToIndexedDb && !savedToFallback) {
+  if (!savedToIndexedDb) {
     setActionStatus("冻结 UI 失败");
-    alert("冻结 UI 失败：当前浏览器存储空间不足。请减少超大 PNG 后重试，或用本地服务器方式打开工具。");
+    alert("冻结 UI 失败：已自动清理旧的大图缓存，请再点一次“冻结 UI”。如果仍失败，请用本地服务器方式打开工具。");
     return;
   }
 
