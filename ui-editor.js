@@ -120,6 +120,8 @@ const dom = {
   saveLayout: document.querySelector("#saveLayout"),
   freezeUi: document.querySelector("#freezeUi"),
   unfreezeUi: document.querySelector("#unfreezeUi"),
+  importPackage: document.querySelector("#importPackage"),
+  downloadPackage: document.querySelector("#downloadPackage"),
   downloadConfig: document.querySelector("#downloadConfig"),
   actionStatus: document.querySelector("#actionStatus"),
 };
@@ -660,6 +662,100 @@ function downloadConfig() {
   }
 }
 
+function downloadPackage() {
+  try {
+    const uiPackage = {
+      schemaVersion: "0.1",
+      exportedAt: new Date().toISOString(),
+      uiConfig: buildConfig(),
+      uiAssets: collectUiAssets(),
+    };
+    const blob = new Blob([JSON.stringify(uiPackage, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "ui-layout-package.json";
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      link.remove();
+      URL.revokeObjectURL(url);
+    }, 0);
+    setActionStatus("已下载 UI 完整包");
+  } catch (error) {
+    console.error(error);
+    setActionStatus("完整包下载失败");
+    alert("完整包下载失败，请刷新后重试。");
+  }
+}
+
+function applyUiPackage(uiPackage) {
+  const config = uiPackage.uiConfig || uiPackage.config || uiPackage;
+  const assets = uiPackage.uiAssets || uiPackage.assets || {};
+  if (!config?.screens) {
+    throw new Error("Invalid UI package.");
+  }
+
+  (config.screens || []).forEach((savedScreen) => {
+    const screen = screens.find((item) => item.id === savedScreen.id);
+    if (!screen) return;
+    screen.elements = (savedScreen.elements || []).map((element) => {
+      const imageName = element.image ? element.image.split("/").pop() : "";
+      return {
+        id: element.id,
+        type: element.type,
+        name: element.name,
+        text: element.text,
+        imageName,
+        imagePreview: imageName && assets[imageName] ? assets[imageName] : "",
+        imageData: imageName && assets[imageName] ? assets[imageName] : "",
+        x: element.x,
+        y: element.y,
+        w: element.w,
+        h: element.h,
+        opacity: element.opacity,
+        fontSize: element.fontSize,
+        backgroundColor: element.backgroundColor,
+        textColor: element.textColor,
+        fillMode: element.fillMode || (element.type === "text" ? "transparent" : "solid"),
+        borderEnabled: element.borderEnabled !== false,
+        borderColor: element.borderColor || (element.type === "image" ? "#d7b873" : "#263238"),
+        visible: element.visible !== false,
+        locked: element.locked === true,
+        assetWidth: element.assetWidth || 0,
+        assetHeight: element.assetHeight || 0,
+      };
+    });
+  });
+
+  state.screenId = screens[0].id;
+  state.selectedId = screens[0].elements[0]?.id || null;
+  window.spotGameShared.uiConfig = buildConfig();
+  window.spotGameShared.uiAssets = collectUiAssets();
+  sendToHub({ type: "save-ui-preview", uiConfig: window.spotGameShared.uiConfig, uiAssets: window.spotGameShared.uiAssets });
+  render();
+}
+
+async function importPackageFromFile() {
+  const file = dom.importPackage.files?.[0];
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    applyUiPackage(JSON.parse(text));
+    dom.importPackage.value = "";
+    setActionStatus("已导入 UI 完整包");
+    alert("UI 完整包已导入。可以先去游戏预览查看，再点击“冻结 UI”。");
+  } catch (error) {
+    console.error(error);
+    setActionStatus("导入 UI 完整包失败");
+    alert("导入 UI 完整包失败，请确认文件是从本工具导出的完整包。");
+  }
+}
+
 function loadSavedLayout() {
   const configText = localStorage.getItem(STORAGE_KEYS.uiConfig);
   const assetsText = localStorage.getItem(STORAGE_KEYS.uiAssets);
@@ -765,6 +861,8 @@ dom.deleteElement.addEventListener("click", () => {
 });
 
 dom.downloadConfig.addEventListener("click", downloadConfig);
+dom.downloadPackage.addEventListener("click", downloadPackage);
+dom.importPackage.addEventListener("change", importPackageFromFile);
 dom.saveLayout.addEventListener("click", saveLayoutToPreview);
 dom.freezeUi.addEventListener("click", freezeUiLayout);
 dom.unfreezeUi.addEventListener("click", unfreezeUiLayout);
