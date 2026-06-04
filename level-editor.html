@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>找茬关卡编辑器 Demo</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="panel left-panel">
+        <h1>关卡编辑器</h1>
+
+        <label>
+          关卡 ID
+          <input id="levelId" value="level-001">
+        </label>
+
+        <label>
+          关卡标题
+          <input id="title" value="第 1 关">
+        </label>
+
+        <label>
+          图集 ID
+          <input id="collectionId" value="collection-001">
+        </label>
+
+        <label>
+          主题
+          <input id="theme" value="默认主题">
+        </label>
+
+        <div class="two-col">
+          <label>
+            时间(秒)
+            <input id="timeLimitSec" type="number" min="1" value="300">
+          </label>
+          <label>
+            生命
+            <input id="life" type="number" min="1" value="5">
+          </label>
+        </div>
+
+        <label>
+          上图
+          <input id="topImage" type="file" accept="image/*">
+        </label>
+
+        <label>
+          下图
+          <input id="bottomImage" type="file" accept="image/*">
+        </label>
+
+        <label>
+          导入关卡 JSON
+          <input id="importJson" type="file" accept="application/json,.json">
+        </label>
+
+        <button id="loadSample" type="button">载入本次示例配置</button>
+        <button id="unfreezeLevel" class="danger" type="button">解冻关卡 1</button>
+
+        <div class="tip">
+          上传第 1 关上下图后，在任意一张图上点击添加不同点。点击“保存到预览”后，游戏预览会读取当前配置。
+        </div>
+      </aside>
+
+      <section class="phone-stage">
+        <div class="phone-frame">
+          <header class="game-topbar">
+            <span id="stageTitle">第 1 关</span>
+            <span>生命 5</span>
+            <span>05:00</span>
+          </header>
+
+          <div class="image-stack">
+            <div class="image-board" id="topBoard">
+              <img id="topPreview" alt="上图预览">
+              <span class="placeholder">上传上图</span>
+            </div>
+            <div class="image-board" id="bottomBoard">
+              <img id="bottomPreview" alt="下图预览">
+              <span class="placeholder">上传下图</span>
+            </div>
+          </div>
+
+          <footer class="game-bottombar">
+            <button id="savePreview" type="button">保存到预览</button>
+            <button id="freezeLevel" type="button">冻结关卡 1</button>
+            <button id="downloadJson" type="button">下载 JSON</button>
+            <span id="actionStatus" class="action-status"></span>
+          </footer>
+        </div>
+      </section>
+
+      <aside class="panel right-panel">
+        <h2>不同点</h2>
+        <div id="diffList" class="diff-list"></div>
+
+        <div class="editor-card">
+          <h3>选中项</h3>
+          <label>
+            半径
+            <input id="radius" type="range" min="0.015" max="0.12" step="0.005" value="0.045">
+          </label>
+
+          <label class="check-row">
+            <input id="tutorial" type="checkbox">
+            新手引导点
+          </label>
+
+          <label class="check-row">
+            <input id="hintable" type="checkbox" checked>
+            可被提示选中
+          </label>
+
+          <button id="deleteDiff" class="danger" type="button">删除不同点</button>
+        </div>
+
+        <h2>导出预览</h2>
+        <pre id="jsonPreview"></pre>
+      </aside>
+    </main>
+
+    <script src="shared-store.js"></script>
+    <script src="persistent-store.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

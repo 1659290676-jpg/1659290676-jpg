@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>找茬 UI 编辑器 Demo</title>
+    <link rel="stylesheet" href="ui-editor.css">
+  </head>
+  <body>
+    <main class="ui-editor">
+      <aside class="side-panel">
+        <div class="tool-title">
+          <h1>UI 编辑器</h1>
+          <a href="index.html">关卡编辑器</a>
+        </div>
+
+        <label>
+          当前界面
+          <select id="screenSelect"></select>
+        </label>
+
+        <div class="button-grid">
+          <button id="addText" type="button">文字</button>
+          <button id="addButton" type="button">按钮</button>
+          <button id="addPanel" type="button">面板</button>
+          <button id="addImage" type="button">图片位</button>
+        </div>
+
+        <h2>元素列表</h2>
+        <div id="elementList" class="element-list"></div>
+
+        <div class="hint">
+          在手机画布中拖拽元素。选中后可在右侧调整位置、尺寸、透明度和文字。
+        </div>
+      </aside>
+
+      <section class="preview-wrap">
+        <div class="phone">
+          <div id="canvas" class="canvas"></div>
+        </div>
+      </section>
+
+      <aside class="side-panel inspector">
+        <h2>属性</h2>
+
+        <label>
+          名称
+          <input id="elName">
+        </label>
+
+        <label>
+          文字
+          <input id="elText">
+        </label>
+
+        <label>
+          图片资源
+          <input id="elImage" type="file" accept="image/*">
+        </label>
+
+        <div class="grid-2">
+          <label>
+            X
+            <input id="elX" type="number" min="0" max="1" step="0.001">
+          </label>
+          <label>
+            Y
+            <input id="elY" type="number" min="0" max="1" step="0.001">
+          </label>
+        </div>
+
+        <div class="grid-2">
+          <label>
+            宽
+            <input id="elW" type="number" min="0.01" max="1" step="0.001">
+          </label>
+          <label>
+            高
+            <input id="elH" type="number" min="0.01" max="1" step="0.001">
+          </label>
+        </div>
+
+        <label>
+          透明度
+          <input id="elOpacity" type="range" min="0" max="1" step="0.05">
+        </label>
+
+        <div class="grid-2">
+          <label>
+            字号
+            <input id="elFontSize" type="number" min="8" max="80" step="1">
+          </label>
+          <label>
+            可见
+            <select id="elVisible">
+              <option value="true">显示</option>
+              <option value="false">隐藏</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="grid-2">
+          <label>
+            背景色
+            <input id="elBg" type="color">
+          </label>
+          <label>
+            文字色
+            <input id="elColor" type="color">
+          </label>
+        </div>
+
+        <label>
+          背景填充
+          <select id="elFillMode">
+            <option value="solid">颜色填充</option>
+            <option value="transparent">背景透明</option>
+          </select>
+        </label>
+
+        <div class="grid-2">
+          <label>
+            边框线
+            <select id="elBorderEnabled">
+              <option value="true">显示</option>
+              <option value="false">隐藏</option>
+            </select>
+          </label>
+          <label>
+            边框颜色
+            <input id="elBorderColor" type="color">
+          </label>
+        </div>
+
+        <div class="layer-tools">
+          <button id="bringToFront" type="button">置顶</button>
+          <button id="moveUp" type="button">上移</button>
+          <button id="moveDown" type="button">下移</button>
+          <button id="sendToBack" type="button">置底</button>
+        </div>
+
+        <button id="deleteElement" class="danger" type="button">删除元素</button>
+        <button id="saveLayout" type="button">保存到预览</button>
+        <button id="freezeUi" type="button">冻结 UI</button>
+        <button id="unfreezeUi" class="danger" type="button">解冻 UI</button>
+        <button id="downloadConfig" type="button">下载 UI JSON</button>
+        <div id="actionStatus" class="action-status">等待操作</div>
+
+        <h2>导出预览</h2>
+        <pre id="jsonPreview"></pre>
+      </aside>
+    </main>
+
+    <script src="shared-store.js"></script>
+    <script src="persistent-store.js"></script>
+    <script src="ui-editor.js"></script>
+  </body>
+</html>

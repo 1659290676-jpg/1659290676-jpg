@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>找茬游戏预览</title>
+    <link rel="stylesheet" href="game-preview.css">
+  </head>
+  <body>
+    <main class="preview-shell">
+      <aside class="preview-panel">
+        <h1>游戏预览</h1>
+        <p>这里读取关卡编辑器和 UI 编辑器保存的本地配置。保存后切换到本页即可预览。</p>
+        <button id="refreshPreview" type="button">刷新配置</button>
+        <button id="resetRun" type="button">重新开始</button>
+        <div class="status" id="statusText">等待配置</div>
+      </aside>
+
+      <section class="preview-stage">
+        <div class="phone">
+          <div id="gameCanvas" class="game-canvas"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="shared-store.js"></script>
+    <script src="game-preview.js"></script>
+  </body>
+</html>

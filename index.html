@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>找茬游戏开发工具中心</title>
+    <link rel="stylesheet" href="tool-hub.css">
+  </head>
+  <body>
+    <header class="hub-header">
+      <div>
+        <h1>找茬游戏开发工具中心</h1>
+        <p>关卡编辑、UI 编辑和游戏预览共用同一套本地配置，贴近 Cocos Creator 3.8.8 的 JSON 对接方式。</p>
+      </div>
+      <nav class="hub-tabs" aria-label="工具切换">
+        <button class="active" data-target="level-editor-frame" type="button">关卡编辑器</button>
+        <button data-target="ui-editor-frame" type="button">UI 编辑器</button>
+        <button data-target="game-preview-frame" type="button">游戏预览</button>
+      </nav>
+    </header>
+
+    <main class="hub-main">
+      <iframe id="level-editor-frame" class="tool-frame active" src="level-editor.html" title="关卡编辑器"></iframe>
+      <iframe id="ui-editor-frame" class="tool-frame" src="ui-editor.html" title="UI 编辑器"></iframe>
+      <iframe id="game-preview-frame" class="tool-frame" src="game-preview.html" title="游戏预览"></iframe>
+    </main>
+
+    <script src="persistent-store.js"></script>
+    <script src="tool-hub.js"></script>
+  </body>
+</html>
