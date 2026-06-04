@@ -5,6 +5,42 @@ const STORAGE_KEYS = {
   uiAssets: "spotGame.uiAssets",
 };
 
+const STATIC_DEFAULT_LEVEL = {
+  schemaVersion: "0.1",
+  engineTarget: "web-preview",
+  levelId: "level-001",
+  title: "Level 1",
+  collectionId: "collection-001",
+  theme: "default",
+  timeLimitSec: 300,
+  life: 5,
+  images: {
+    top: "levels/level-001/Gemini_Generated_Image_5c91v05c91v05c91.png",
+    bottom: "levels/level-001/Gemini_Generated_Image_gair9igair9igair.png",
+  },
+  differences: [
+    { id: "diff-001", x: 0.6495, y: 0.2808, r: 0.045, shape: "circle", tutorial: true, hintable: true },
+    { id: "diff-002", x: 0.9407, y: 0.225, r: 0.045, shape: "circle", tutorial: true, hintable: true },
+    { id: "diff-003", x: 0.8918, y: 0.9181, r: 0.045, shape: "circle", tutorial: true, hintable: true },
+    { id: "diff-004", x: 0.4021, y: 0.3611, r: 0.045, shape: "circle", tutorial: true, hintable: true },
+    { id: "diff-005", x: 0.7397, y: 0.4615, r: 0.045, shape: "circle", tutorial: true, hintable: true },
+  ],
+  tutorial: {
+    maskFirstCount: 2,
+    idleHintSec: 5,
+    enablePinchGuide: true,
+  },
+  rewards: {
+    puzzlePiece: 1,
+    galleryImage: "levels/level-001/reward.png",
+  },
+};
+
+const STATIC_DEFAULT_ASSETS = {
+  top: STATIC_DEFAULT_LEVEL.images.top,
+  bottom: STATIC_DEFAULT_LEVEL.images.bottom,
+};
+
 const canvas = document.querySelector("#gameCanvas");
 const statusText = document.querySelector("#statusText");
 const refreshPreview = document.querySelector("#refreshPreview");
@@ -27,10 +63,15 @@ function readJson(key, fallback) {
   }
 }
 
+function cloneDefaultLevel() {
+  return JSON.parse(JSON.stringify(STATIC_DEFAULT_LEVEL));
+}
+
 function loadAll() {
   const shared = window.spotGameShared || {};
-  levelConfig = shared.levelConfig || readJson(STORAGE_KEYS.levelConfig, null);
-  levelAssets = shared.levelAssets || {};
+  const storedAssets = readJson(STORAGE_KEYS.levelAssets, {});
+  levelConfig = shared.levelConfig || readJson(STORAGE_KEYS.levelConfig, null) || cloneDefaultLevel();
+  levelAssets = { ...STATIC_DEFAULT_ASSETS, ...(storedAssets || {}), ...(shared.levelAssets || {}) };
   uiConfig = shared.uiConfig || readJson(STORAGE_KEYS.uiConfig, null);
   uiAssets = shared.uiAssets || {};
 }
