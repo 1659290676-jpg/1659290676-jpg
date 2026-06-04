@@ -67,6 +67,18 @@ function cloneDefaultLevel() {
   return JSON.parse(JSON.stringify(STATIC_DEFAULT_LEVEL));
 }
 
+function ensurePlayableLevel() {
+  if (!levelConfig || !Array.isArray(levelConfig.differences) || levelConfig.differences.length === 0) {
+    levelConfig = cloneDefaultLevel();
+  }
+  levelAssets = {
+    ...STATIC_DEFAULT_ASSETS,
+    ...(levelAssets || {}),
+  };
+  if (!levelAssets.top) levelAssets.top = STATIC_DEFAULT_ASSETS.top;
+  if (!levelAssets.bottom) levelAssets.bottom = STATIC_DEFAULT_ASSETS.bottom;
+}
+
 function loadAll() {
   const shared = window.spotGameShared || {};
   const storedAssets = readJson(STORAGE_KEYS.levelAssets, {});
@@ -74,6 +86,7 @@ function loadAll() {
   levelAssets = { ...STATIC_DEFAULT_ASSETS, ...(storedAssets || {}), ...(shared.levelAssets || {}) };
   uiConfig = shared.uiConfig || readJson(STORAGE_KEYS.uiConfig, null);
   uiAssets = shared.uiAssets || {};
+  ensurePlayableLevel();
 }
 
 function applySharedState(shared) {
@@ -198,16 +211,7 @@ function renderEntry() {
 
 function startLevel() {
   loadAll();
-  if (!levelConfig) {
-    alert("还没有关卡配置。请先到关卡编辑器上传图片、标点并保存。");
-    renderEntry();
-    return;
-  }
-  if (!levelAssets.top || !levelAssets.bottom) {
-    alert("已读取关卡 JSON，但还没有读取到上下图。请回到关卡编辑器重新上传上图、下图，然后点击“保存到预览”。");
-    renderEntry();
-    return;
-  }
+  ensurePlayableLevel();
 
   clearTimer();
   run = {
