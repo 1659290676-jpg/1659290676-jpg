@@ -3,6 +3,11 @@ const STORAGE_KEYS = {
   uiAssets: "spotGame.uiAssets",
 };
 
+const DESIGN_SIZE = {
+  width: 720,
+  height: 1280,
+};
+
 const screens = [
   {
     id: "level-entry",
@@ -138,6 +143,9 @@ function makeElement(id, type, text, x, y, w, h, backgroundColor = "#ffffff", op
     borderEnabled: type !== "text",
     borderColor: type === "image" ? "#d7b873" : "#263238",
     visible: true,
+    locked: false,
+    assetWidth: 0,
+    assetHeight: 0,
   };
 }
 
@@ -163,8 +171,8 @@ function buildConfig() {
     engineTarget: "cocos-creator-3.8.8",
     canvas: {
       aspect: "9:16",
-      designWidth: 720,
-      designHeight: 1280,
+      designWidth: DESIGN_SIZE.width,
+      designHeight: DESIGN_SIZE.height,
     },
     screens: screens.map((screen) => ({
       id: screen.id,
@@ -187,6 +195,9 @@ function buildConfig() {
         borderEnabled: element.borderEnabled !== false,
         borderColor: element.borderColor || "#263238",
         visible: element.visible,
+        locked: element.locked === true,
+        assetWidth: element.assetWidth || 0,
+        assetHeight: element.assetHeight || 0,
       })),
     })),
   };
@@ -223,7 +234,7 @@ function renderCanvas() {
     if (!element.visible) return;
 
     const node = document.createElement("div");
-    node.className = `ui-node${element.id === state.selectedId ? " selected" : ""}`;
+    node.className = `ui-node${element.id === state.selectedId ? " selected" : ""}${element.locked ? " locked" : ""}`;
     if (state.screenId === "gameplay" && ["top-image", "bottom-image"].includes(element.id)) {
       node.classList.add("no-frame");
     }
@@ -250,10 +261,12 @@ function renderCanvas() {
     node.style.borderColor = element.borderEnabled === false ? "transparent" : element.borderColor || "#263238";
     node.style.color = element.textColor;
 
-    const handle = document.createElement("span");
-    handle.className = "resize-handle";
-    handle.addEventListener("pointerdown", (event) => startResize(event, element.id));
-    node.appendChild(handle);
+    if (!element.locked) {
+      const handle = document.createElement("span");
+      handle.className = "resize-handle";
+      handle.addEventListener("pointerdown", (event) => startResize(event, element.id));
+      node.appendChild(handle);
+    }
 
     node.addEventListener("pointerdown", (event) => startDrag(event, element.id));
     dom.canvas.appendChild(node);
@@ -266,8 +279,20 @@ function renderList() {
     const item = document.createElement("button");
     item.type = "button";
     item.className = `element-item${element.id === state.selectedId ? " active" : ""}`;
-    item.innerHTML = `<span>${element.name}</span><span class="element-type">${element.type}</span>`;
+    item.innerHTML = `
+      <span class="element-main">
+        <span>${element.name}</span>
+        <span class="element-type">${element.type}${element.locked ? " · locked" : ""}</span>
+      </span>
+      <span class="lock-toggle" role="button" tabindex="0">${element.locked ? "解锁" : "锁定"}</span>
+    `;
     item.addEventListener("click", () => {
+      state.selectedId = element.id;
+      render();
+    });
+    item.querySelector(".lock-toggle").addEventListener("click", (event) => {
+      event.stopPropagation();
+      element.locked = !element.locked;
       state.selectedId = element.id;
       render();
     });
@@ -278,6 +303,7 @@ function renderList() {
 function renderInspector() {
   const element = currentElement();
   const disabled = !element;
+  const locked = element?.locked === true;
   [
     dom.elName,
     dom.elText,
@@ -300,15 +326,16 @@ function renderInspector() {
     dom.sendToBack,
     dom.deleteElement,
   ].forEach((control) => {
-    control.disabled = disabled;
+    control.disabled = disabled || locked;
   });
 
   if (!element) return;
+  dom.elName.disabled = locked;
 
   dom.elName.value = element.name;
   dom.elText.value = element.text;
   dom.elImage.value = "";
-  dom.elImage.disabled = !["image", "button", "panel"].includes(element.type);
+  dom.elImage.disabled = locked || !["image", "button", "panel"].includes(element.type);
   dom.elX.value = round(element.x);
   dom.elY.value = round(element.y);
   dom.elW.value = round(element.w);
@@ -344,6 +371,10 @@ function startDrag(event, id) {
   if (event.target.classList.contains("resize-handle")) return;
   const element = currentScreen().elements.find((item) => item.id === id);
   state.selectedId = id;
+  if (element.locked) {
+    render();
+    return;
+  }
   const { rect } = canvasMetrics();
   state.drag = {
     mode: "move",
@@ -358,6 +389,10 @@ function startDrag(event, id) {
 function startResize(event, id) {
   event.stopPropagation();
   state.selectedId = id;
+  if (currentElement()?.locked) {
+    render();
+    return;
+  }
   state.drag = {
     mode: "resize",
     id,
@@ -373,20 +408,21 @@ function startResize(event, id) {
 function handlePointerMove(event) {
   if (!state.drag) return;
   const element = currentScreen().elements.find((item) => item.id === state.drag.id);
+  if (!element || element.locked) return;
   const { rect } = canvasMetrics();
 
   if (state.drag.mode === "move") {
     const x = (event.clientX - rect.left - state.drag.offsetX) / rect.width;
     const y = (event.clientY - rect.top - state.drag.offsetY) / rect.height;
-    element.x = clamp(x, element.w / 2, 1 - element.w / 2);
-    element.y = clamp(y, element.h / 2, 1 - element.h / 2);
+    element.x = round(x);
+    element.y = round(y);
   }
 
   if (state.drag.mode === "resize") {
     const deltaW = (event.clientX - state.drag.startX) / rect.width;
     const deltaH = (event.clientY - state.drag.startY) / rect.height;
-    element.w = clamp(state.drag.startW + deltaW, 0.04, 1);
-    element.h = clamp(state.drag.startH + deltaH, 0.02, 1);
+    element.w = round(Math.max(0.001, state.drag.startW + deltaW));
+    element.h = round(Math.max(0.001, state.drag.startH + deltaH));
   }
 
   render();
@@ -422,6 +458,7 @@ function addElement(type) {
 function updateSelected(partial) {
   const element = currentElement();
   if (!element) return;
+  if (element.locked) return;
   Object.assign(element, partial);
   render();
 }
@@ -454,6 +491,21 @@ function readFileAsDataUrl(file) {
     reader.addEventListener("error", reject);
     reader.readAsDataURL(file);
   });
+}
+
+function readImageInfo(file) {
+  return readFileAsDataUrl(file).then((dataUrl) => new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener("load", () => {
+      resolve({
+        dataUrl,
+        width: image.naturalWidth || image.width,
+        height: image.naturalHeight || image.height,
+      });
+    });
+    image.addEventListener("error", reject);
+    image.src = dataUrl;
+  }));
 }
 
 function collectUiAssets() {
@@ -590,6 +642,9 @@ function loadSavedLayout() {
           borderEnabled: element.borderEnabled !== false,
           borderColor: element.borderColor || (element.type === "image" ? "#d7b873" : "#263238"),
           visible: element.visible !== false,
+          locked: element.locked === true,
+          assetWidth: element.assetWidth || 0,
+          assetHeight: element.assetHeight || 0,
         };
       });
     });
@@ -616,20 +671,28 @@ dom.elText.addEventListener("input", () => updateSelected({ text: dom.elText.val
 dom.elImage.addEventListener("change", async () => {
   const element = currentElement();
   const file = dom.elImage.files[0];
-  if (!element || !["image", "button", "panel"].includes(element.type) || !file) return;
+  if (!element || element.locked || !["image", "button", "panel"].includes(element.type) || !file) return;
 
   element.imageName = file.name;
-  element.imageData = await readFileAsDataUrl(file);
+  const imageInfo = await readImageInfo(file);
+  element.imageData = imageInfo.dataUrl;
   element.imagePreview = element.imageData;
+  element.assetWidth = imageInfo.width;
+  element.assetHeight = imageInfo.height;
+  element.w = round(imageInfo.width / DESIGN_SIZE.width);
+  element.h = round(imageInfo.height / DESIGN_SIZE.height);
+  element.fillMode = "transparent";
+  element.backgroundColor = "#ffffff";
+  element.borderEnabled = false;
   if (!element.name || element.name === element.text) {
     element.name = file.name;
   }
   render();
 });
-dom.elX.addEventListener("input", () => updateSelected({ x: clamp(Number(dom.elX.value), 0, 1) }));
-dom.elY.addEventListener("input", () => updateSelected({ y: clamp(Number(dom.elY.value), 0, 1) }));
-dom.elW.addEventListener("input", () => updateSelected({ w: clamp(Number(dom.elW.value), 0.01, 1) }));
-dom.elH.addEventListener("input", () => updateSelected({ h: clamp(Number(dom.elH.value), 0.01, 1) }));
+dom.elX.addEventListener("input", () => updateSelected({ x: Number(dom.elX.value) }));
+dom.elY.addEventListener("input", () => updateSelected({ y: Number(dom.elY.value) }));
+dom.elW.addEventListener("input", () => updateSelected({ w: Math.max(0.001, Number(dom.elW.value)) }));
+dom.elH.addEventListener("input", () => updateSelected({ h: Math.max(0.001, Number(dom.elH.value)) }));
 dom.elOpacity.addEventListener("input", () => updateSelected({ opacity: Number(dom.elOpacity.value) }));
 dom.elFontSize.addEventListener("input", () => updateSelected({ fontSize: Number(dom.elFontSize.value) }));
 dom.elVisible.addEventListener("change", () => updateSelected({ visible: dom.elVisible.value === "true" }));

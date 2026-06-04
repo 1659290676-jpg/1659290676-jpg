@@ -174,9 +174,32 @@ button.danger:hover {
   text-align: left;
 }
 
+.element-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+
 .element-item.active {
   border-color: #f2b705;
   background: #fff7d9;
+}
+
+.lock-toggle {
+  min-width: 44px;
+  padding: 5px 7px;
+  border-radius: 5px;
+  background: #e7edf2;
+  color: #455560;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.element-item.active .lock-toggle {
+  background: #f2b705;
+  color: #3a2a00;
 }
 
 .element-type {
@@ -220,6 +243,27 @@ button.danger:hover {
   user-select: none;
   text-align: center;
   line-height: 1.2;
+}
+
+.ui-node.locked {
+  cursor: default;
+  outline: 2px dashed rgba(70, 83, 91, 0.6);
+  outline-offset: -2px;
+}
+
+.ui-node.locked::after {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  z-index: 3;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(38, 50, 56, 0.78);
+  color: #ffffff;
+  content: "LOCK";
+  font-size: 10px;
+  font-weight: 700;
+  pointer-events: none;
 }
 
 .node-label {
