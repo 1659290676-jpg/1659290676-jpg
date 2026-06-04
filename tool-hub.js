@@ -3,6 +3,11 @@ const frames = document.querySelectorAll(".tool-frame");
 const ignoredFrozenLevelIds = new Set();
 let ignoreFrozenUi = false;
 
+const FALLBACK_KEYS = {
+  frozenUiConfig: "spotGame.frozenUiConfig",
+  frozenUiAssets: "spotGame.frozenUiAssets",
+};
+
 function ensureSharedStore() {
   window.spotGameShared = window.spotGameShared || {
     levelConfig: null,
@@ -13,6 +18,16 @@ function ensureSharedStore() {
 }
 
 ensureSharedStore();
+
+function readFallbackJson(key) {
+  try {
+    const value = localStorage.getItem(key) || sessionStorage.getItem(key);
+    return value ? JSON.parse(value) : null;
+  } catch (error) {
+    console.warn(`Failed to read fallback ${key}`, error);
+    return null;
+  }
+}
 
 buttons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -93,6 +108,18 @@ async function buildStateForPreview() {
     }
   } catch (error) {
     console.warn("Failed to load frozen UI", error);
+  }
+
+  if (!ignoreFrozenUi) {
+    const fallbackConfig = readFallbackJson(FALLBACK_KEYS.frozenUiConfig);
+    if (fallbackConfig) {
+      return {
+        ...window.spotGameShared,
+        uiConfig: fallbackConfig,
+        uiAssets: readFallbackJson(FALLBACK_KEYS.frozenUiAssets) || {},
+        frozenUiId: "default-ui",
+      };
+    }
   }
 
   return window.spotGameShared;

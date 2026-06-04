@@ -1,6 +1,8 @@
 const STORAGE_KEYS = {
   uiConfig: "spotGame.uiConfig",
   uiAssets: "spotGame.uiAssets",
+  frozenUiConfig: "spotGame.frozenUiConfig",
+  frozenUiAssets: "spotGame.frozenUiAssets",
 };
 
 const DESIGN_SIZE = {
@@ -527,6 +529,7 @@ function saveLayoutToPreview() {
     sendToHub({ type: "save-ui-preview", uiConfig: window.spotGameShared.uiConfig, uiAssets: window.spotGameShared.uiAssets });
     try {
       localStorage.setItem(STORAGE_KEYS.uiConfig, JSON.stringify(window.spotGameShared.uiConfig));
+      localStorage.setItem(STORAGE_KEYS.uiAssets, JSON.stringify(window.spotGameShared.uiAssets));
     } catch (storageError) {
       console.warn("UI layout was saved in memory only.", storageError);
     }
@@ -540,20 +543,48 @@ function saveLayoutToPreview() {
 }
 
 async function freezeUiLayout() {
+  const uiConfig = buildConfig();
+  const uiAssets = collectUiAssets();
+  let savedToIndexedDb = false;
+  let savedToFallback = false;
+
   try {
-    const uiConfig = buildConfig();
-    const uiAssets = collectUiAssets();
     await window.SpotPersistentStore.saveUi("default-ui", uiConfig, uiAssets);
-    window.spotGameShared.uiConfig = uiConfig;
-    window.spotGameShared.uiAssets = uiAssets;
-    sendToHub({ type: "save-ui-preview", uiConfig, uiAssets, frozen: true });
-    setActionStatus("UI 已冻结");
-    alert("UI 已冻结。之后游戏预览刷新也会优先读取这个冻结版本，直到你点击“解冻 UI”。");
+    savedToIndexedDb = true;
   } catch (error) {
-    console.error(error);
-    setActionStatus("冻结 UI 失败");
-    alert("冻结 UI 失败，请刷新后重试。");
+    console.warn("IndexedDB freeze failed, using fallback freeze.", error);
   }
+
+  try {
+    localStorage.setItem(STORAGE_KEYS.uiConfig, JSON.stringify(uiConfig));
+    localStorage.setItem(STORAGE_KEYS.uiAssets, JSON.stringify(uiAssets));
+    localStorage.setItem(STORAGE_KEYS.frozenUiConfig, JSON.stringify(uiConfig));
+    localStorage.setItem(STORAGE_KEYS.frozenUiAssets, JSON.stringify(uiAssets));
+    savedToFallback = true;
+  } catch (localError) {
+    console.warn("localStorage freeze failed, trying sessionStorage.", localError);
+    try {
+      sessionStorage.setItem(STORAGE_KEYS.frozenUiConfig, JSON.stringify(uiConfig));
+      sessionStorage.setItem(STORAGE_KEYS.frozenUiAssets, JSON.stringify(uiAssets));
+      savedToFallback = true;
+    } catch (sessionError) {
+      console.error(sessionError);
+    }
+  }
+
+  if (!savedToIndexedDb && !savedToFallback) {
+    setActionStatus("冻结 UI 失败");
+    alert("冻结 UI 失败：当前浏览器存储空间不足。请减少超大 PNG 后重试，或用本地服务器方式打开工具。");
+    return;
+  }
+
+  window.spotGameShared.uiConfig = uiConfig;
+  window.spotGameShared.uiAssets = uiAssets;
+  sendToHub({ type: "save-ui-preview", uiConfig, uiAssets, frozen: true });
+  setActionStatus(savedToIndexedDb ? "UI 已冻结" : "UI 已冻结（备用存储）");
+  alert(savedToIndexedDb
+    ? "UI 已冻结。之后游戏预览刷新也会优先读取这个冻结版本，直到你点击“解冻 UI”。"
+    : "UI 已冻结到备用存储。当前 file:// 环境下 IndexedDB 不稳定，但游戏预览会优先读取这个冻结版本。");
 }
 
 async function unfreezeUiLayout() {
@@ -568,6 +599,10 @@ async function unfreezeUiLayout() {
   try {
     localStorage.removeItem(STORAGE_KEYS.uiConfig);
     localStorage.removeItem(STORAGE_KEYS.uiAssets);
+    localStorage.removeItem(STORAGE_KEYS.frozenUiConfig);
+    localStorage.removeItem(STORAGE_KEYS.frozenUiAssets);
+    sessionStorage.removeItem(STORAGE_KEYS.frozenUiConfig);
+    sessionStorage.removeItem(STORAGE_KEYS.frozenUiAssets);
     window.spotGameShared.uiConfig = null;
     window.spotGameShared.uiAssets = {};
     sendToHub({ type: "save-ui-preview", uiConfig: null, uiAssets: {} });
